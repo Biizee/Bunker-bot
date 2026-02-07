@@ -7,6 +7,7 @@ import os
 import random
 
 prof = ["a", "b", "c", "d"]
+users = []
 
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
@@ -34,6 +35,15 @@ async def test(interaction: discord.Interaction, user: discord.User):
     await user.send(text)
     await interaction.response.send_message("Test", ephemeral=True)
     print(cp)
+    users.append([u_prof, u_age])
+
+@bot.tree.command(name="test", description="For testing lists")
+@app_commands.describe(user="Enter user")
+async def list_t(interaction: discord.Interaction, user: discord.User):
+    print(users)
+    text = f"{users}"
+    await user.send(text)
+    await interaction.response.send_message("Test", ephemeral=True)
 
 
 bot.run(token, log_handler=handler, log_level=logging.DEBUG)
