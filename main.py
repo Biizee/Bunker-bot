@@ -9,6 +9,8 @@ import random
 prof = ["a", "b", "c", "d"]
 users = []
 
+bunker_role = "✧✧PARTY✧✧"
+
 load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
 
@@ -45,5 +47,27 @@ async def list_t(interaction: discord.Interaction, user: discord.User):
     await user.send(text)
     await interaction.response.send_message("Test", ephemeral=True)
 
+class View(discord.ui.View):
+    @discord.ui.button(label="JOIN", style=discord.ButtonStyle.green, emoji="🪅")
+    async def button_callback(self, interaction, button):
+        role = discord.utils.get(interaction.guild.roles, name = bunker_role)
+        if role:
+            await interaction.user.add_roles(role)
+            await interaction.response.send_message(f"{interaction.user.mention} joined the party!", ephemeral=True)
+        else:
+            await interaction.response.send_message("Couldn't find the role. L + Ratio", ephemeral=True)
+
+@bot.tree.command(name= "party", description= "Start a party")
+async def myButton(interaction: discord.Interaction):
+    await interaction.response.send_message(view=View())
+
+@bot.tree.command(name="leave", description="Leave the party")
+async def leave(interaction: discord.Interaction):
+    role = discord.utils.get(interaction.guild.roles, name = bunker_role)
+    if role:
+        await interaction.user.remove_roles(role)
+        await interaction.response.send_message(f"{interaction.user.mention} left the party!", ephemeral=True)
+    else:
+        await interaction.response.send_message("Couldn't find the role. L + Ratio", ephemeral=True)
 
 bot.run(token, log_handler=handler, log_level=logging.DEBUG)
