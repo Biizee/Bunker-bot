@@ -47,11 +47,13 @@ async def roll_bunker_info(users):
             food_time = random.randint(1,3)
         else:
             food_time = 0
-    b_desc = random.choice([f"Давно покинутий бункер. Має {live_count} спальних місць та запас їжі на {text_to_live}. На підлозі багато піску та перекотиполе, а всі поверхні в пилу. Не має в собі багато меблів чи приладдя, від кожного звуку можна почути ехо. Електроенергія присутня і працює, але світло все одно тьмяне та іноді може мигати. Вам необхідно протриматись {text_to_live}.\n\n", 
+    
+    b_desc = "## **Бункер:**\n"
+    b_desc += random.choice([f"Давно покинутий бункер. Має {live_count} спальних місць та запас їжі на {text_to_live}. На підлозі багато піску та перекотиполе, а всі поверхні в пилу. Не має в собі багато меблів чи приладдя, від кожного звуку можна почути ехо. Електроенергія присутня і працює, але світло все одно тьмяне та іноді може мигати. Вам необхідно протриматись {text_to_live}.\n\n", 
                             f"Абсолютно новий бункер, зі всім що необхідно для комфортних умов проживання, {live_count} спальних кімнат, кімната з тренажерами, кухня, столова, велика душова і вітальня, але, на жаль, в нього не встигли завести їжу, тож удачі вам прожити в цьому бункері решту життя({text_to_live}).\n\n", 
                             f"Побудований з лего бункер. Дуже сумнівно, що він довго протримається, тож, аби зберегти його якнайдовше, всі жителі мусять вести себе дуже обережно, адже прожити потрібно {text_to_live}. Добре омебльований, але все з лего, має {live_count} спальних місць(з лего). Є запас їжі на {food_time} місяців. Електропостачання в нормі, з водою часто проблеми (лего труби дають про себе знати).\n\n"
                             ])
-    
+    b_desc += "## **Катастрофа:**"
     b_desc += random.choice(["Вся земля стала Паркур Цивілізацією і ви відмовились жити в такому світі сховавшись в бункері.", 
                             "У світі з'явилося купу маніяків, тож щоб вижити треба бігати і лагодити генератори в бункері.",
                             "Всіх людей відправило до світу майнкрафту, де вся нежить і монстри мутували і стали набагато небезпечнішими, тому виживуть тільки кращі з кращих (роблоксерам не вижити).",
@@ -92,7 +94,27 @@ async def update_info_text(user):
 
     return [o_prof, o_age, o_kicked, o_inv, o_h]
 
+async def build_all_users_text(current_user):
 
+    text = "```text\n" 
+    
+    for target in users_list:
+        if target != current_user:
+            d = await update_info_text(target)
+            
+            row1_left = f"Profession: {d[0]}"
+            row1_right = f"Age: {d[1]}"
+            row2_left = f"Inventory: {d[3]}"
+            row2_right = f"Health: {d[4]}"
+            
+            max_left = max(len(row1_left), len(row2_left)) + 5
+            
+            text += f"=== {target} [{d[2]}] ===\n"
+            text += f"{row1_left:<{max_left}} | {row1_right}\n"
+            text += f"{row2_left:<{max_left}} | {row2_right}\n\n"
+            
+    text += "```" 
+    return text
 
 @bot.tree.command(name="info", description="Send info to all users")
 @app_commands.describe(role="Select role")
@@ -148,19 +170,7 @@ async def info(interaction: discord.Interaction, role: discord.Role):
     
     for member in guild.members:
         if role in member.roles and not member.bot:
-            text_about_others = ""
-
-            for user in users_list:
-                if user != member.name:
-                    d = await update_info_text(user)
-                    text_about_others += f"""
-===
-{user} - {d[2]}
-Profession: - {d[0]}
-Age: - {d[1]}
-Inventory: - {d[3]}
-Health: - {d[4]}\n
-"""
+            text_about_others = await build_all_users_text(member.name)
 
             try:
                 msg = await member.send(text_about_others)
@@ -185,26 +195,13 @@ async def edit(interaction: discord.Interaction, info: str):
         await interaction.response.send_message("profession или age, дура",ephemeral=True)
         return
 
-
     for other_user in users_list:
-        user = await bot.fetch_user(dm_message[other_user][0])
-        channel = await user.create_dm()
-        message = await channel.fetch_message(dm_message[other_user][1])
+            user = await bot.fetch_user(dm_message[other_user][0])
+            channel = await user.create_dm()
+            message = await channel.fetch_message(dm_message[other_user][1])
 
-        text = ""
-
-        for target in users_list:
-            if target != other_user:
-                d = await update_info_text(target)
-                text += f"""
-\n===
-{target} - {d[2]}
-Profession: - {d[0]}
-Age: - {d[1]}
-Inventory: - {d[3]}
-Health: - {d[4]}\n
-"""
-        await message.edit(content=text)
+            text = await build_all_users_text(other_user)
+            await message.edit(content=text)
 
     await interaction.response.send_message(f"Your info was uncovered!", ephemeral=True)
 
